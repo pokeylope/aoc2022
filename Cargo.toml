@@ -11,3 +11,4 @@ publish = false
 pico-args = "0.5.0"
 itertools = "*"
 regex = "*"
+simple-matrix = { git = "https://github.com/porky11/simple-matrix", version = "0.1.2" }
