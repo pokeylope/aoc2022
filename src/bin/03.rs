@@ -22,26 +22,24 @@ pub fn part_one(input: &str) -> Option<u32> {
     Some(total)
 }
 
-const GROUP_SIZE: usize = 3;
-
 pub fn part_two(input: &str) -> Option<u32> {
-    let mut badges = 0;
-    let mut group: Vec<HashSet<char>> = Vec::with_capacity(GROUP_SIZE);
-    for line in input.lines() {
-        let items: HashSet<_> = line.chars().collect();
-        group.push(items);
-
-        if group.len() == GROUP_SIZE {
-            let badge = *group
-                .drain(0..)
-                .reduce(|a, b| a.intersection(&b).copied().collect())?
-                .iter()
-                .exactly_one()
-                .unwrap();
-            badges += priority(badge);
-        }
-    }
-    Some(badges)
+    Some(
+        input
+            .lines()
+            .map(|l| l.chars().collect::<HashSet<_>>())
+            .chunks(3)
+            .into_iter()
+            .map(|g| {
+                priority(
+                    *g.reduce(|a, b| a.intersection(&b).copied().collect())
+                        .unwrap()
+                        .iter()
+                        .exactly_one()
+                        .unwrap(),
+                )
+            })
+            .sum(),
+    )
 }
 
 fn main() {

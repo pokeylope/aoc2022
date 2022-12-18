@@ -10,7 +10,9 @@ struct Directory {
 
 impl Directory {
     fn children<'a>(&'a self, tree: &'a DirectoryTree) -> impl Iterator<Item = (&String, &FsNode)> {
-        self.entries.iter().map(|(name, idx)| (name, &tree.get(*idx).contents))
+        self.entries
+            .iter()
+            .map(|(name, idx)| (name, &tree.get(*idx).contents))
     }
 
     fn get_size(&self, tree: &DirectoryTree) -> u32 {
@@ -56,7 +58,11 @@ impl DirectoryTree {
         let mut nodes = vec![];
         let root_dir = FsNode::Directory(Default::default());
         let idx = nodes.len();
-        let root_entry = DirEntry { idx, parent_idx: None, contents: root_dir };
+        let root_entry = DirEntry {
+            idx,
+            parent_idx: None,
+            contents: root_dir,
+        };
         nodes.push(root_entry);
         Self { nodes, root: idx }
     }
@@ -76,7 +82,11 @@ impl DirectoryTree {
 
     fn add_entry(&mut self, parent_idx: usize, name: String, entry: FsNode) -> usize {
         let idx = self.nodes.len();
-        let child = DirEntry { idx, parent_idx: Some(parent_idx), contents: entry };
+        let child = DirEntry {
+            idx,
+            parent_idx: Some(parent_idx),
+            contents: entry,
+        };
         self.nodes.push(child);
         let FsNode::Directory(parent) = &mut self.get_mut(parent_idx).contents else { panic!() };
         parent.entries.insert(name, idx);
@@ -120,17 +130,17 @@ fn parse(input: &str) -> DirectoryTree {
                         } else {
                             curdir = tree.mkdir(curdir, arg.to_string());
                         }
-                    },
+                    }
                     "ls" => (),
                     _ => panic!("Unexpected command: {cmd}"),
                 }
-            },
+            }
             "dir" => (),
             _ => {
                 let size = a.parse().unwrap();
                 let filename = b.to_string();
                 tree.add_file(curdir, filename, size);
-            },
+            }
         }
     }
     tree
@@ -138,28 +148,37 @@ fn parse(input: &str) -> DirectoryTree {
 
 pub fn part_one(input: &str) -> Option<u32> {
     let tree = parse(input);
-    Some(tree.dirs().filter_map(|d| {
-        let size = d.get_size(&tree);
-        if size <= 100_000 {
-            Some(size)
-        } else {
-            None
-        }
-    }).sum())
+    Some(
+        tree.dirs()
+            .filter_map(|d| {
+                let size = d.get_size(&tree);
+                if size <= 100_000 {
+                    Some(size)
+                } else {
+                    None
+                }
+            })
+            .sum(),
+    )
 }
 
 pub fn part_two(input: &str) -> Option<u32> {
     let tree = parse(input);
     let free = FS_SIZE - tree.get_root().get_size(&tree);
     let needed = NEEDED_SIZE - free;
-    Some(tree.dirs().filter_map(|d| {
-        let size = d.get_size(&tree);
-        if size >= needed {
-            Some(size)
-        } else {
-            None
-        }
-    }).min().unwrap())
+    Some(
+        tree.dirs()
+            .filter_map(|d| {
+                let size = d.get_size(&tree);
+                if size >= needed {
+                    Some(size)
+                } else {
+                    None
+                }
+            })
+            .min()
+            .unwrap(),
+    )
 }
 
 fn main() {
