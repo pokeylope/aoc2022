@@ -1,3 +1,5 @@
+use itertools::Itertools;
+
 enum Opcode {
     Noop,
     Addx(i32),
@@ -39,14 +41,18 @@ impl Vm<'_> {
         }
     }
 
-    fn decode(&mut self) {
+    fn decode(&mut self) -> bool {
         assert!(self.current.is_none());
+        if self.pc >= self.prog.len() {
+            return false;
+        }
         let insn = &self.prog[self.pc];
         self.current = Some(insn);
         self.delay = match insn {
             Opcode::Noop => 0,
             Opcode::Addx(_) => 1,
         };
+        true
     }
 
     fn commit(&mut self) {
@@ -61,18 +67,21 @@ impl Vm<'_> {
         self.pc += 1;
     }
 
-    fn tick(&mut self) {
+    fn tick(&mut self) -> bool {
         if self.current.is_some() {
             if self.delay > 0 {
                 self.delay -= 1;
             }
         } else {
-            self.decode();
+            if !self.decode() {
+                return false;
+            }
         }
         if self.delay == 0 {
             self.commit();
         }
         self.cycle += 1;
+        true
     }
 }
 
@@ -95,8 +104,32 @@ pub fn part_one(input: &str) -> Option<i32> {
     Some(result)
 }
 
-pub fn part_two(input: &str) -> Option<u32> {
-    None
+const CRT_WIDTH: usize = 40;
+
+fn display(crt: &[bool]) {
+    for line in &crt.iter().chunks(CRT_WIDTH) {
+        for pixel in line {
+            print!("{}", if *pixel { '#' } else { '.' });
+        }
+        println!();
+    }
+}
+
+pub fn part_two(input: &str) -> Option<bool> {
+    let prog = parse(input);
+    let mut vm = Vm::new(&prog);
+    let mut crt: Vec<bool> = vec![false; 240];
+    for i in 0.. {
+        if vm.x.abs_diff(i % CRT_WIDTH as i32) <= 1 {
+            crt[i as usize] = true;
+        }
+        if !vm.tick() {
+            break;
+        }
+    }
+    println!();
+    display(&crt);
+    Some(true)
 }
 
 fn main() {
@@ -118,6 +151,6 @@ mod tests {
     #[test]
     fn test_part_two() {
         let input = advent_of_code::read_file("examples", 10);
-        assert_eq!(part_two(&input), None);
+        assert_eq!(part_two(&input), Some(true));
     }
 }
